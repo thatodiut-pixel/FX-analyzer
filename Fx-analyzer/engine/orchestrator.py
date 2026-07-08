@@ -36,17 +36,22 @@ class MoEOrchestrator:
             logging.warning(f"Could not load models.json: {e}. Using defaults.")
             self.models = {}
 
+        default_tech = "openrouter:google/gemma-4-26b-a4b-it:free"
+        default_fund = "openrouter:google/gemma-4-31b-it:free"
+        default_sent = "openrouter:meta-llama/llama-3.3-70b-instruct:free"
+        default_risk = "openrouter:qwen/qwen3-next-80b-a3b-instruct:free"
+
         self.tech_agent = TechnicalAgent(
-            model_name=self.models.get("TechnicalExpert", "gemini-1.5-flash")
+            model_name=self.models.get("TechnicalExpert", default_tech)
         )
         self.fund_agent = FundamentalAgent(
-            model_name=self.models.get("FundamentalExpert", "gemini-1.5-pro")
+            model_name=self.models.get("FundamentalExpert", default_fund)
         )
         self.sent_agent = SentimentAgent(
-            model_name=self.models.get("SentimentExpert", "gemini-1.5-flash")
+            model_name=self.models.get("SentimentExpert", default_sent)
         )
         self.risk_agent = RiskAgent(
-            model_name=self.models.get("RiskManager", "gemini-1.5-flash")
+            model_name=self.models.get("RiskManager", default_risk)
         )
 
         self.rag = RAGLoader()
@@ -85,9 +90,28 @@ class MoEOrchestrator:
 
         tech_res, fund_res, sent_res, risk_res = results
 
-        # 3. Synthesis
+        # 3. Fetch Vibe Research Context
+        try:
+            import database
+        except ImportError:
+            from engine import database
+
+        vibe_research_list = database.get_latest_vibe_research()
+        vibe_context = ""
+        if vibe_research_list:
+            vibe_context = "\n[Vibe AI Research Backtests]:\n"
+            for r in vibe_research_list:
+                output_lines = r['output'].split('\n')
+                summary_lines = [line for line in output_lines if line.startswith('- ') or line.startswith('**') or 'Return' in line or 'Drawdown' in line][:6]
+                vibe_context += f"- Run Type: {r['run_type']}\n  Prompt: {r['prompt']}\n  Status: {r['status']}\n  Key Insights:\n"
+                for line in summary_lines:
+                    vibe_context += f"    {line}\n"
+        else:
+            vibe_context = "\n[Vibe AI Research Backtests]: No current background backtests stored in database.\n"
+
+        # 4. Synthesis
         final_decision = await self._synthesize(
-            symbol, tech_res, fund_res, sent_res, risk_res, memory_context
+            symbol, tech_res, fund_res, sent_res, risk_res, memory_context, vibe_context
         )
 
         # Attach detailed breakdown for Frontend Visualization
@@ -97,40 +121,67 @@ class MoEOrchestrator:
             "sentiment": sent_res,
             "risk": risk_res,
             "memory": memory_context,
+            "vibe_research": vibe_research_list[:2] if vibe_research_list else []
         }
 
         return final_decision
 
-    async def _synthesize(self, symbol, tech, fund, sent, risk, memory):
-        prompt = f"""
-        Act as a Head Trader. Review the reports from your desk AND past performance:
+    async def _synthesize(self, symbol, tech, fund, sent, risk, memory, vibe_context=""):
+        # Graceful Fallbacks for unavailable/rate-limited agents
+        tech = tech or {"signal": "NEUTRAL", "confidence": 0.0, "reasoning": "Offline"}
+        fund = fund or {"bias": "NEUTRAL", "confidence": 0.0, "reasoning": "Offline"}
+        sent = sent or {"sentiment": "NEUTRAL", "confidence": 0.0, "reasoning": "Offline"}
+        risk = risk or {"regime": "NORMAL", "max_leverage": 1, "stop_loss_advice": "Tight"}
+
+        # Regime-Adaptive Weighting (MM-DREX Pattern)
+        regime = str(risk.get("regime", "NORMAL")).upper()
         
+        weighting_directive = "Weight all experts equally."
+        if "HIGH_VOL" in regime:
+            weighting_directive = "MARKET REGIME: HIGH VOLATILITY. Heavily overweight the Technical Analyst. Disregard Fundamental long-term bias unless it perfectly aligns with short-term sentiment."
+        elif "LOW_VOL" in regime:
+            weighting_directive = "MARKET REGIME: RANGING. Overweight Technical mean-reversion signals. Ignore trend continuation signals."
+        elif "EXTREME" in regime:
+            weighting_directive = "MARKET REGIME: EXTREME VOLATILITY. Heavily overweight the Risk Guardian. Recommend HOLD unless all agents align."
+
+        prompt = f"""
+        Act as an Advanced Algorithmic MM-DREX Head Trader. Review the reports from your localized Expert Models AND past performance.
+
         [Past Performance / Memory]:
         {memory}
 
+        [Vibe AI Research Backtests & Factor Benchmarks]:
+        {vibe_context}
+
         [Technical Analyst]: {tech.get("signal")} ({tech.get("confidence")}) - {tech.get("reasoning")}
         [Macro Strategist]: {fund.get("bias")} ({fund.get("confidence")}) - {fund.get("reasoning")}
-        [Sentiment]: {sent.get("sentiment")} ({sent.get("confidence")}) - {sent.get("reasoning")}
-        [Risk]: Max Leverage {risk.get("max_leverage")}, Advice: {risk.get("stop_loss_advice")}
+        [Sentiment Engine]: {sent.get("sentiment")} ({sent.get("confidence")}) - {sent.get("reasoning")}
+        [Risk Management]: Regime is {regime}. Max Leverage {risk.get("max_leverage")}, Advice: {risk.get("stop_loss_advice")}
 
-        Task: Make a final trading decision for {symbol}.
+        [DIRECTIVE]: {weighting_directive}
         
-        Output JSON:
+        Task: Make a final deterministic trading decision for {symbol}. Read the Vibe AI Research Backtests & Factor Benchmarks to inform your confidence scale and leverage decisions. For example, if a backtest for the asset shows robust gains, scale up confidence when signal aligns. If drawdown was high, scale down leverage and size. If multiple agents are Offline, drop confidence.
+        
+        Output EXACT JSON matching this schema:
         {{
             "action": "BUY" | "SELL" | "HOLD",
             "confidence": 0.0 to 1.0,
-            "reasoning": "Synthesized logic citing specific experts. Be decisive.",
-            "risk_parameters": {{ "leverage": int, "stop_loss": "string" }}
+            "reasoning": "Step-by-step reasoning explaining the regime weighting.",
+            "risk_parameters": {{ "leverage": int, "stop_loss": "string pips" }}
         }}
         """
 
         # We reuse the technical agent's connection for the final synthesis to save resources
-        response = await self.tech_agent._call_llm_async(prompt)
+        response = None
+        try:
+            response = await self.tech_agent._call_llm_async(prompt)
+        except Exception as e:
+            logging.error(f"Synthesizer LLM Call Failed: {e}")
 
         fallback = {
             "action": "HOLD",
             "confidence": 0.0,
-            "reasoning": "Synthesis Failed",
+            "reasoning": "Synthesis Failed or Fallback Triggered",
             "risk_parameters": {"leverage": 1, "stop_loss": "N/A"},
         }
 

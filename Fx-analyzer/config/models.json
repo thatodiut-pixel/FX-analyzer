@@ -1,7 +1,7 @@
 {
-    "TechnicalExpert": "gemini-1.5-flash",
-    "FundamentalExpert": "gemini-1.5-pro",
-    "SentimentExpert": "gemini-1.5-flash",
-    "RiskManager": "gemini-1.5-flash",
-    "Orchestrator": "gemini-1.5-pro"
+    "TechnicalExpert": "openrouter:google/gemma-4-26b-a4b-it:free",
+    "FundamentalExpert": "openrouter:google/gemma-4-31b-it:free",
+    "SentimentExpert": "openrouter:meta-llama/llama-3.3-70b-instruct:free",
+    "RiskManager": "openrouter:qwen/qwen3-next-80b-a3b-instruct:free",
+    "Orchestrator": "openrouter:google/gemma-4-26b-a4b-it:free"
 }

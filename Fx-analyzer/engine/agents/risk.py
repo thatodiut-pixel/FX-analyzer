@@ -4,7 +4,7 @@ except ImportError:
     from .base import BaseAgent
 
 class RiskAgent(BaseAgent):
-    def __init__(self, model_name="gemini-1.5-flash"):
+    def __init__(self, model_name="openrouter:qwen/qwen3-next-80b-a3b-instruct:free"):
         super().__init__(name="RiskManager", role="Risk Controls", model_name=model_name)
 
     async def analyze(self, market_state: dict) -> dict:

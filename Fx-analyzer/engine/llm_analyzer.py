@@ -27,18 +27,19 @@ load_dotenv()
 class LLMAnalyzer:
     """
     Analyzes market data using multiple Cloud LLM providers.
-    Supports: DeepSeek (Reasoner), Groq (Llama3/Mixtral), Gemini (Flash).
+    Supports: OpenRouter (free models), DeepSeek (Reasoner), Groq (Llama3/Mixtral), Gemini (Flash).
     """
     def __init__(self):
         self.cache = {} # (symbol, action) -> {data, timestamp}
-        self.provider = "deepseek" # Default
-        self.model_name = "deepseek-reasoner" # Default
+        self.provider = "openrouter" # Default
+        self.model_name = "google/gemma-4-26b-a4b-it:free" # Default
         
         # API Keys
         self.keys = {
             "deepseek": os.getenv("DEEPSEEK_API_KEY"),
             "groq": os.getenv("GROQ_API_KEY"),
-            "gemini": os.getenv("GEMINI_API_KEY")
+            "gemini": os.getenv("GEMINI_API_KEY"),
+            "openrouter": os.getenv("OPENROUTER_API_KEY")
         }
         
         # Initialize Clients
@@ -47,6 +48,11 @@ class LLMAnalyzer:
 
         # Available Models Map (High Reasoning & Latest)
         self.available_models = {
+            "OpenRouter Gemma 4 26B (Free)": {"provider": "openrouter", "model": "google/gemma-4-26b-a4b-it:free"},
+            "OpenRouter Gemma 4 31B (Free)": {"provider": "openrouter", "model": "google/gemma-4-31b-it:free"},
+            "OpenRouter Llama 3.3 70B (Free)": {"provider": "openrouter", "model": "meta-llama/llama-3.3-70b-instruct:free"},
+            "OpenRouter Nemotron 3 Super 120B (Free)": {"provider": "openrouter", "model": "nvidia/nemotron-3-super-120b-a12b:free"},
+            "OpenRouter Qwen3 Next 80B (Free)": {"provider": "openrouter", "model": "qwen/qwen3-next-80b-a3b-instruct:free"},
             "DeepSeek Reasoner (R1)": {"provider": "deepseek", "model": "deepseek-reasoner"},
             "Groq Llama 3.3 70B": {"provider": "groq", "model": "llama-3.3-70b-versatile"},
             "Groq DeepSeek R1 Distill": {"provider": "groq", "model": "deepseek-r1-distill-llama-70b"},
@@ -54,10 +60,17 @@ class LLMAnalyzer:
         }
         
         # Set initial valid model
-        self.set_model("DeepSeek Reasoner (R1)")
+        self.set_model("OpenRouter Gemma 4 26B (Free)")
 
     def _init_clients(self):
         """Initialize API clients based on available keys."""
+        # OpenRouter (OpenAI Compatible)
+        if self.keys["openrouter"] and OpenAI:
+            try:
+                self.clients["openrouter"] = OpenAI(api_key=self.keys["openrouter"], base_url="https://openrouter.ai/api/v1")
+                logging.info("OpenRouter Client Initialized")
+            except Exception as e: logging.error(f"OpenRouter Init Error: {e}")
+
         # DeepSeek (OpenAI Compatible)
         if self.keys["deepseek"] and OpenAI:
             try:
@@ -120,8 +133,21 @@ class LLMAnalyzer:
         try:
             raw_response = ""
             
+            # --- OpenRouter Execution ---
+            if self.provider == "openrouter":
+                response = client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "system", "content": "You are a specialized Forex Analyst. Output strictly JSON."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.1,
+                    max_tokens=1024
+                )
+                raw_response = response.choices[0].message.content
+
             # --- DeepSeek Execution ---
-            if self.provider == "deepseek":
+            elif self.provider == "deepseek":
                 response = client.chat.completions.create(
                     model=self.model_name,
                     messages=[

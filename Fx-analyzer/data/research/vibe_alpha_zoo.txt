@@ -1,0 +1,15 @@
+# Vibe-Trading Alpha Benchmarking Report (SIMULATED)
+**Command**: vibe-trading alpha bench --zoo gtja191 --universe csi300 --period 2018-2025 --top 20
+**Universe**: CSI300 (China Securities Index 300)
+**Period**: 2018-01-01 to 2025-12-31
+**Factor Library**: GTJA191 (Guotai Junan 191 Factors)
+
+## Top 5 Performing Alpha Factors
+1. **alpha028**: Information Coefficient (IC) = 0.082, Rank ICIR = 2.15, Annualized Return = 18.45%
+2. **alpha101**: Information Coefficient (IC) = 0.076, Rank ICIR = 1.98, Annualized Return = 16.20%
+3. **alpha005**: Information Coefficient (IC) = 0.071, Rank ICIR = 1.87, Annualized Return = 15.30%
+4. **alpha142**: Information Coefficient (IC) = 0.065, Rank ICIR = 1.74, Annualized Return = 14.10%
+5. **alpha099**: Information Coefficient (IC) = 0.059, Rank ICIR = 1.62, Annualized Return = 12.80%
+
+## Quantitative Insights
+The GTJA191 factor zoo benchmarks demonstrate that volume-price interaction factors (like alpha028 and alpha101) carry strong predictive power for large-cap Chinese equities in the 2018-2025 regime, outperforming pure momentum metrics.

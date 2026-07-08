@@ -1,0 +1,15 @@
+# Vibe-Trading Strategy Backtest Report (SIMULATED)
+**Prompt**: Backtest a BTC-USDT 20/50 moving-average strategy for 2024, summarize return and drawdown, then export the report
+**Period**: 2024-01-01 to 2024-12-31
+**Asset**: BTC/USDT
+
+## Performance Summary
+- **Total Return**: +42.85%
+- **Benchmark Return (Buy & Hold)**: +154.20%
+- **Max Drawdown**: -12.40%
+- **Sharpe Ratio**: 1.76
+- **Win Rate**: 58.3%
+- **Total Trades**: 34 (18 Wins, 16 Losses)
+
+## Agent Assessment
+The 20/50 moving-average crossover strategy on BTC/USDT provides a robust filter during high-volatility regimes, mitigating major trend reversals and keeping drawdown contained to -12.4% (vs -45% for benchmark Buy & Hold). However, it underperforms during long ranging markets due to whipsaws.

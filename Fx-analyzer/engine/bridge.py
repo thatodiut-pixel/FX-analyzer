@@ -1,7 +1,6 @@
 import asyncio
 import zmq
 import zmq.asyncio
-import time
 import json
 import logging
 from datetime import datetime
@@ -15,6 +14,8 @@ try:
     from engine.data_feed import DataFeed
     from engine.calendar_service import CalendarService
     from engine import database
+    from engine.vibe_research_service import VibeResearchService
+    from engine.agent_bridge import AgentAnalysisBridge
 except ImportError:
     # Fallback for running inside engine/ dir
     from analyzer import TechnicalAnalyzer
@@ -23,6 +24,8 @@ except ImportError:
     from data_feed import DataFeed
     from calendar_service import CalendarService
     import database
+    from vibe_research_service import VibeResearchService
+    from agent_bridge import AgentAnalysisBridge
 
 # Setup Logging
 logging.basicConfig(
@@ -57,6 +60,8 @@ class AsyncEngineBridge:
         self.moe = MoEOrchestrator()  # Replaces LLMAnalyzer
         self.data_feed = DataFeed()
         self.calendar = CalendarService()
+        self.vibe_research = VibeResearchService()
+        self.agent_bridge = AgentAnalysisBridge()
 
         # Initialize Database
         database.init_db()
@@ -92,8 +97,78 @@ class AsyncEngineBridge:
                         response = {"status": "error", "message": "No model specified"}
 
                 elif cmd == "GET_MODELS":
-                    # Return current config
-                    response = {"status": "ok", "models": self.moe.models}
+                    # Return all models whose API keys are configured
+                    try:
+                        from engine.agents.base import BaseAgent
+                    except ImportError:
+                        from agents.base import BaseAgent
+                    configured = BaseAgent.get_configured_models()
+                    response = {
+                        "status": "ok",
+                        "models": configured,
+                        "models_list": list(configured.values()),
+                    }
+
+                elif cmd == "EXECUTE_TRADE":
+                    sys_symbol = msg.get("symbol")
+                    sys_action = msg.get("action")
+                    sys_volume = msg.get("volume", 0.01)
+                    
+                    if sys_symbol and sys_action:
+                        logging.info(f"Executing MT5 trade: {sys_symbol} {sys_action}")
+                        exec_res = self.executor.execute_order(sys_symbol, sys_action, volume=sys_volume)
+                        if exec_res["status"] in ["filled", "mock_filled"]:
+                            response = {"status": "filled", "ticket": exec_res.get("ticket", 0)}
+                        else:
+                            response = {"status": "error", "message": exec_res.get("reason", "Execution Failed")}
+                    else:
+                        response = {"status": "error", "message": "Missing symbol or action"}
+
+                elif cmd == "MT5_STATUS":
+                    status = {
+                        "connected": getattr(self.executor, 'connected', False),
+                        "account": None,
+                        "server": None,
+                        "balance": 0.0,
+                        "equity": 0.0,
+                    }
+                    # Try to fetch account info if connected
+                    if self.executor.connected:
+                        try:
+                            import MetaTrader5 as mt5
+                            account_info = mt5.account_info()
+                            if account_info:
+                                status["account"] = account_info.login
+                                status["server"] = account_info.server
+                                status["balance"] = account_info.balance
+                                status["equity"] = account_info.equity
+                        except Exception:
+                            pass
+                    response = {"status": "ok", "info": status}
+
+                elif cmd == "ENGINE_AGENT_ANALYZE":
+                    query = msg.get("query", "")
+                    active_agents = msg.get("active_agents")
+                    debate_rounds = msg.get("debate_rounds")
+                    risk_rounds = msg.get("risk_rounds")
+
+                    if not query:
+                        response = {"status": "error", "message": "No query provided"}
+                    else:
+                        logging.info(f"Agent analysis requested: {query[:80]}")
+                        result = await self.agent_bridge.analyze(
+                            query,
+                            active_agents=active_agents,
+                            debate_rounds=debate_rounds,
+                            risk_rounds=risk_rounds,
+                        )
+                        response = result
+
+                elif cmd == "AGENT_BRIDGE_STATUS":
+                    response = {
+                        "status": "ok",
+                        "initialized": self.agent_bridge.initialized,
+                    }
 
                 await self.cmd_socket.send_json(response)
 
@@ -203,11 +278,22 @@ class AsyncEngineBridge:
             self.executor.shutdown()
 
     async def main(self):
-        # Run Command Listener and Main Loop concurrently
-        await asyncio.gather(self.listen_commands(), self.run_loop())
+        # Start agent bridge initialisation in background (non-blocking)
+        init_task = asyncio.create_task(self.agent_bridge.initialize())
+
+        # Run Command Listener, Main Loop and Vibe Research background tasks concurrently
+        await asyncio.gather(
+            self.listen_commands(),
+            self.run_loop(),
+            self.vibe_research.run_research_tasks(),
+            init_task,
+        )
 
 
 if __name__ == "__main__":
+    import sys
+    if sys.platform == 'win32':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     bridge = AsyncEngineBridge()
     try:
         asyncio.run(bridge.main())

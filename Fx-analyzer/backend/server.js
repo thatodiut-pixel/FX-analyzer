@@ -7,13 +7,45 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 const app = express();
-app.use(cors());
+
+// Secure CORS - Only allow the Vercel frontend and local development
+const allowedOrigins = [
+    'http://localhost:3000',
+    'https://frontend-jjh4l1mja-sellomakgatho121-2317s-projects.vercel.app'
+];
+
+app.use(cors({
+    origin: function(origin, callback) {
+        // Allow requests with no origin (like mobile apps, curl) or allowed origins
+        if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: ['GET', 'POST']
+}));
 app.use(express.json());
+
+// --- API Key Protection Middleware ---
+// Protects all backend routes from public access
+const API_KEY = process.env.API_KEY || 'fx-analyzer-secure-key-2026';
+
+app.use((req, res, next) => {
+    // Health check and vibe-research are public
+    if (req.path === '/api/health' || req.path === '/api/vibe-research') return next();
+
+    const clientKey = req.headers['x-api-key'];
+    if (!clientKey || clientKey !== API_KEY) {
+        return res.status(403).json({ error: 'Forbidden: Invalid API Key' });
+    }
+    next();
+});
 
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*",
+        origin: allowedOrigins,
         methods: ["GET", "POST"]
     }
 });
@@ -35,30 +67,52 @@ const dbRun = (sql, params = []) => new Promise((resolve, reject) => {
 });
 
 // --- Helper Functions ---
-const symbols = ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCHF', 'USDCAD'];
 const basePrices = {
-    'EURUSD': 1.0865,
-    'GBPUSD': 1.2678,
-    'USDJPY': 155.42,
-    'AUDUSD': 0.6534,
-    'USDCHF': 0.8876,
-    'USDCAD': 1.3521,
+    // Major FX
+    'EURUSD': 1.0865, 'GBPUSD': 1.2678, 'USDJPY': 155.42,
+    'AUDUSD': 0.6534, 'USDCHF': 0.8876, 'USDCAD': 1.3521, 'NZDUSD': 0.5942,
+    // Cross FX (subset for ticker)
+    'EURGBP': 0.8570, 'EURJPY': 168.85, 'GBPJPY': 197.00,
+    // Commodities
+    'XAUUSD': 3045.50, 'XAGUSD': 33.85, 'XTIUSD': 68.72, 'XBRUSD': 72.15,
+    'XNGUSD': 3.92, 'XCUUSD': 4.28,
+    // Indices
+    'US30': 42850, 'US500': 5780, 'NAS100': 20150,
 };
+
+// Formatting helper for different asset types
+function getDecimals(symbol) {
+    if (['USDJPY', 'EURJPY', 'GBPJPY', 'AUDJPY', 'CADJPY', 'CHFJPY', 'NZDJPY'].includes(symbol)) return 2;
+    if (['XAUUSD', 'XPTUSD', 'XPDUSD', 'XTIUSD', 'XBRUSD'].includes(symbol)) return 2;
+    if (['XAGUSD', 'XNGUSD', 'XCUUSD'].includes(symbol)) return 3;
+    if (['US30', 'US500', 'NAS100', 'UK100', 'GER40', 'JPN225'].includes(symbol)) return 0;
+    return 5;
+}
+
+function formatSymbolDisplay(symbol) {
+    // Indices don't need splitting
+    if (['US30', 'US500', 'NAS100', 'UK100', 'GER40', 'JPN225'].includes(symbol)) return symbol;
+    if (symbol.length === 6) return symbol.slice(0, 3) + '/' + symbol.slice(3);
+    return symbol;
+}
 
 function generateTickerData() {
     return Object.entries(basePrices).map(([symbol, basePrice]) => {
-        const change = (Math.random() - 0.5) * 0.002;
+        const volatility = basePrice > 1000 ? 0.001 : 0.002;
+        const change = (Math.random() - 0.5) * volatility * basePrice;
         const newPrice = basePrice + change;
         const changePercent = ((change / basePrice) * 100).toFixed(2);
+        const decimals = getDecimals(symbol);
 
         return {
-            symbol: symbol.slice(0, 3) + '/' + symbol.slice(3),
-            price: newPrice.toFixed(symbol === 'USDJPY' ? 2 : 5),
+            symbol: formatSymbolDisplay(symbol),
+            price: newPrice.toFixed(decimals),
             change: `${parseFloat(changePercent) >= 0 ? '+' : ''}${changePercent}%`,
             positive: parseFloat(changePercent) >= 0,
         };
     });
 }
+
 
 // --- ZeroMQ Subscriber (Python Bridge) ---
 async function startZMQ() {
@@ -68,24 +122,44 @@ async function startZMQ() {
         sock.connect("tcp://127.0.0.1:5555");
         sock.subscribe("signal");
         sock.subscribe("ticker");
+        sock.subscribe("vibe-research");
         console.log("🔌 Connected to Python Engine via ZeroMQ");
 
-        for await (const [topic, message] of sock) {
-            const topicStr = topic.toString();
-            const msgStr = message.toString();
+        for await (const parts of sock) {
+            let topicStr = "";
+            let msgStr = "";
+
+            if (parts.length >= 2) {
+                topicStr = parts[0].toString();
+                msgStr = parts[1].toString();
+            } else if (parts.length === 1) {
+                const fullStr = parts[0].toString();
+                const spaceIndex = fullStr.indexOf(' ');
+                if (spaceIndex !== -1) {
+                    topicStr = fullStr.substring(0, spaceIndex);
+                    msgStr = fullStr.substring(spaceIndex + 1);
+                } else {
+                    topicStr = fullStr;
+                }
+            } else {
+                continue;
+            }
 
             try {
                 const data = JSON.parse(msgStr);
 
                 if (topicStr === 'signal') {
                     // Signal is already stored in DB by Python
-                    // Just emit to frontend for live updates
-                    io.emit('fx-signal', data);
-                    console.log(`📊 [PY-SIGNAL] ${data.symbol} ${data.action} @ ${data.price}`);
+                    // Only emit to premium subscribers
+                    io.to('premium').emit('fx-signal', data);
+                    console.log(`📊 [PY-SIGNAL] ${data.symbol} ${data.action} @ ${data.price} -> PREMIUM`);
                 } else if (topicStr === 'ticker') {
                     if (basePrices[data.symbol.replace('/', '')]) {
                         basePrices[data.symbol.replace('/', '')] = data.price;
                     }
+                } else if (topicStr === 'vibe-research') {
+                    io.emit('vibe-research-update', data);
+                    console.log(`🔬 [PY-RESEARCH] New Vibe research update: ${data.run_type} -> ${data.status}`);
                 }
             } catch (e) {
                 console.error("Error parsing ZMQ message:", e);
@@ -98,9 +172,56 @@ async function startZMQ() {
 
 startZMQ();
 
+// --- Admin: List Users ---
+app.get('/api/admin/users', async (req, res) => {
+    try {
+        const rows = await dbAll("SELECT id, email, name, role, subscription_status, created_at FROM users");
+        return res.json(rows || []);
+    } catch (err) {
+        console.error("Admin Users DB Error:", err);
+        return res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// --- Admin: Upgrade User Subscription ---
+app.post('/api/admin/upgrade', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Missing email' });
+
+    try {
+        await dbRun("UPDATE users SET subscription_status = 'active' WHERE email = ?", [email]);
+        return res.json({ success: true, message: `Upgraded ${email}` });
+    } catch (err) {
+        console.error("Admin Upgrade DB Error:", err);
+        return res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// --- ZMQ Engine Communication ---
+const zmqReq = new zmq.Request();
+let zmqReqConnected = false;
+
+async function sendCommand(payload) {
+    if (!zmqReqConnected) {
+        console.log("Connecting to Engine Command Socket...");
+        zmqReq.connect("tcp://127.0.0.1:5556");
+        zmqReqConnected = true;
+    }
+    try {
+        await zmqReq.send(JSON.stringify(payload));
+        const [result] = await zmqReq.receive();
+        return JSON.parse(result.toString());
+    } catch (e) {
+        console.error("ZMQ Command Failed:", e);
+        return { status: "error", message: "Engine Unreachable" };
+    }
+}
+
 // --- WebSocket Connection Handling ---
 io.on('connection', async (socket) => {
-    console.log('✅ Client connected:', socket.id);
+    console.log('✅ Client connected:', socket.id, 'User:', socket.user?.token || 'anonymous');
+
+    socket.join('premium');
 
     // Send initial data
     socket.emit('ticker-update', generateTickerData());
@@ -176,26 +297,31 @@ io.on('connection', async (socket) => {
             return;
         }
 
-        // Simulate execution delay
-        setTimeout(async () => {
-            // Simulated P/L for the trade (Random win/loss for history tracking)
-            const isWin = Math.random() > 0.4; // 60% win rate
-            const tradePL = isWin ? (Math.random() * 50 + 10) : -(Math.random() * 30 + 10);
-            const timestamp = new Date().toISOString();
+        // Execute via Python Engine
+        try {
+            const cleanSymbol = tradeData.symbol.replace('/', '');
+            console.log(`Sending execution to engine: ${cleanSymbol} ${tradeData.action}`);
+            
+            const result = await sendCommand({
+                cmd: 'EXECUTE_TRADE',
+                symbol: cleanSymbol,
+                action: tradeData.action,
+                volume: tradeData.volume || 0.01
+            });
 
-            const executedTrade = {
-                ...tradeData,
-                executedAt: timestamp,
-                status: 'closed', // Auto-close for simulation
-                executionPrice: tradeData.price,
-                pl: parseFloat(tradePL.toFixed(2)),
-                plType: isWin ? 'profit' : 'loss'
-            };
+            if (result.status === 'filled') {
+                const timestamp = new Date().toISOString();
+                const executedTrade = {
+                    ...tradeData,
+                    executedAt: timestamp,
+                    status: 'open', // Real positions are open
+                    executionPrice: tradeData.price, // Using requested price for logging since MT5 doesn't return exact fill price synchronously in basic executor
+                    pl: 0,
+                    plType: 'neutral',
+                    ticket: result.ticket
+                };
 
-            // Store in DB
-            try {
-                // Table: trades (timestamp, symbol, action, entry_price, status) + need to add PL column in DB schema?
-                // database.py schema: pl REAL exists.
+                // Store in DB
                 await dbRun(`
                    INSERT INTO trades (timestamp, symbol, action, entry_price, pl, status)
                    VALUES (?, ?, ?, ?, ?, ?)
@@ -204,21 +330,24 @@ io.on('connection', async (socket) => {
                     executedTrade.symbol,
                     executedTrade.action,
                     executedTrade.price,
-                    executedTrade.pl,
-                    executedTrade.status
+                    0,
+                    'open'
                 ]);
 
                 socket.emit('trade-executed', executedTrade);
-                console.log('✅ Trade executed & stored:', executedTrade);
+                console.log('✅ Real Trade executed & stored:', executedTrade);
 
                 // Emit updated stats
                 io.emit('risk-stats-update', await getDailyStats());
 
-            } catch (e) {
-                console.error("DB Insert Error:", e);
-                socket.emit('trade-rejected', { reason: 'Database error during execution.' });
+            } else {
+                console.error("Execution Rejected by Engine:", result.message);
+                socket.emit('trade-rejected', { reason: result.message || 'Engine rejected trade.' });
             }
-        }, 500);
+        } catch (e) {
+            console.error("Execution Communication Error:", e);
+            socket.emit('trade-rejected', { reason: 'Error communicating with Python execution engine.' });
+        }
     });
 
     // Handle Risk Settings Updates from Frontend
@@ -228,30 +357,39 @@ io.on('connection', async (socket) => {
         io.emit('risk-settings-updated', riskSettings);
     });
 
-    // --- LLM Multi-Model Handling ---
-    const zmqReq = new zmq.Request();
-    let zmqReqConnected = false;
-
-    async function sendCommand(payload) {
-        if (!zmqReqConnected) {
-            console.log("Connecting to Engine Command Socket...");
-            zmqReq.connect("tcp://127.0.0.1:5556");
-            zmqReqConnected = true;
-        }
-        try {
-            await zmqReq.send(JSON.stringify(payload));
-            const [result] = await zmqReq.receive();
-            return JSON.parse(result.toString());
-        } catch (e) {
-            console.error("ZMQ Command Failed:", e);
-            return { status: "error", message: "Engine Unreachable" };
-        }
-    }
-
     socket.on('get-llm-models', async () => {
         const result = await sendCommand({ cmd: 'GET_MODELS' });
         if (result.status === 'ok') {
-            socket.emit('llm-models-list', result.models);
+            socket.emit('llm-models-list', result.models_list || []);
+        }
+    });
+
+    // MT5 Account Status & Management
+    socket.on('mt5-get-status', async () => {
+        const result = await sendCommand({ cmd: 'MT5_STATUS' });
+        if (result.status === 'ok') {
+            socket.emit('mt5-status', result.info);
+        } else {
+            socket.emit('mt5-status', { connected: false, account: null, server: null, balance: 0, equity: 0 });
+        }
+    });
+
+    socket.on('mt5-reconnect', async () => {
+        console.log('🔄 MT5 Reconnect requested');
+        const result = await sendCommand({ cmd: 'MT5_RECONNECT' });
+        if (result.status === 'ok') {
+            socket.emit('mt5-status', {
+                connected: result.connected,
+                account: null,
+                server: null,
+                balance: 0,
+                equity: 0,
+            });
+            socket.emit('notification', {
+                type: result.connected ? 'success' : 'error',
+                title: 'MT5 Connection',
+                message: result.message,
+            });
         }
     });
 
@@ -282,6 +420,15 @@ app.get('/api/health', (req, res) => {
         connections: io.engine.clientsCount,
         db: db ? 'connected' : 'disconnected'
     });
+});
+
+app.get('/api/vibe-research', async (req, res) => {
+    try {
+        const rows = await dbAll('SELECT * FROM vibe_research ORDER BY id DESC LIMIT 10');
+        res.json(rows);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 });
 
 app.get('/api/signals', async (req, res) => {

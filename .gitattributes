@@ -1,0 +1,22 @@
+# Auto-detect text files
+* text=auto
+
+# Source code
+*.js text
+*.jsx text
+*.ts text
+*.tsx text
+*.py text
+*.css text
+*.html text
+*.json text
+*.yml text
+*.yaml text
+*.md text diff=markdown
+
+# Binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.db binary
+*.pdf binary

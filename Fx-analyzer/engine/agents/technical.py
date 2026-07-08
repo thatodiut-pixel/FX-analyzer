@@ -4,7 +4,7 @@ except ImportError:
     from .base import BaseAgent
 
 class TechnicalAgent(BaseAgent):
-    def __init__(self, model_name="gemini-1.5-flash"):
+    def __init__(self, model_name="openrouter:google/gemma-4-26b-a4b-it:free"):
         super().__init__(name="TechnicalExpert", role="Chart Pattern Analyst", model_name=model_name)
 
     async def analyze(self, technical_data: dict) -> dict:

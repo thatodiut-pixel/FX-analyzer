@@ -6,15 +6,15 @@ Start-Sleep -Seconds 2
 
 # Start Backend Server
 Write-Host "Starting Backend Server..." -ForegroundColor Cyan
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd backend; npm start"
+Start-Process powershell -WorkingDirectory "$PSScriptRoot\backend" -ArgumentList "-NoExit", "-Command", "npm.cmd start"
 
 # Start Frontend Application
 Write-Host "Starting Frontend Application..." -ForegroundColor Cyan
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd frontend; npm run dev"
+Start-Process powershell -WorkingDirectory "$PSScriptRoot\frontend" -ArgumentList "-NoExit", "-Command", "npm.cmd run dev"
 
 # Start Python Engine
 Write-Host "Starting Python Analysis Engine..." -ForegroundColor Cyan
-Start-Process powershell -ArgumentList "-NoExit", "-Command", ".\.venv\Scripts\python engine/bridge.py"
+Start-Process powershell -WorkingDirectory "$PSScriptRoot" -ArgumentList "-NoExit", "-Command", ".\.venv\Scripts\python.exe engine/bridge.py"
 
 Write-Host "All services started!" -ForegroundColor Green
 Write-Host "Frontend: http://localhost:3000"

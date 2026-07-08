@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FX Analyzer Pro — Institutional-Grade Trading Terminal</title>
+    <meta name="description" content="Institutional-grade algorithmic FX trading terminal powered by Google Gemini AI with Mixture of Experts architecture." />
+    <meta name="theme-color" content="#030305" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>📊</text></svg>" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','system-ui','sans-serif'],mono:['JetBrains Mono','monospace']}}}}</script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        body { background: #030305; color: #fff; }
+        .grd { background: linear-gradient(135deg,#00f2ff 0%,#00ff88 50%,#ccff00 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .glow { box-shadow: 0 0 30px rgba(0,242,255,.3), 0 0 60px rgba(0,242,255,.1); }
+        .ch { transition: all .3s ease; }
+        .ch:hover { transform: translateY(-4px); box-shadow: 0 8px 40px rgba(0,242,255,.08); }
+        .bs { border-color: rgba(255,255,255,.06); }
+        .bc { background: rgba(255,255,255,.03); }
+    </style>
+</head>
+<body class="antialiased">
+    <nav class="fixed top-0 left-0 right-0 z-50" style="background: rgba(3,3,5,.8); backdrop-filter:blur(20px); border-bottom:1px solid rgba(255,255,255,.04);">
+        <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg" style="background:linear-gradient(135deg,#00f2ff,#00ff88);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.7rem;color:#000;">FX</div>
+                <span class="font-bold text-lg tracking-tight">NEXUS <span style="color:#00f2ff">PRO</span></span>
+            </div>
+            <div class="flex items-center gap-6">
+                <a href="#features" class="text-sm text-gray-400 hover:text-white transition-colors">Features</a>
+                <a href="#arch" class="text-sm text-gray-400 hover:text-white transition-colors">Architecture</a>
+                <a href="#start" class="text-sm text-gray-400 hover:text-white transition-colors">Quick Start</a>
+                <a href="#docs" class="text-sm text-gray-400 hover:text-white transition-colors">Docs</a>
+                <a href="https://github.com/sellomakgatho121/Fx-analyzer" target="_blank" rel="noopener" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="min-h-screen flex items-center justify-center relative pt-16" style="background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(0,242,255,.03) 0%,transparent 70%);">
+        <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-widest mb-8" style="background:rgba(0,242,255,.08);border:1px solid rgba(0,242,255,.2);color:#00f2ff;">
+                <span class="w-2 h-2 rounded-full bg-current animate-pulse"></span>Powered by Gemini AI — MoE Architecture
+            </div>
+            <h1 class="text-5xl md:text-7xl font-black leading-[1.05] tracking-tighter mb-6">Institutional-Grade<br /><span class="grd">FX Signals</span><br />At Your Fingertips</h1>
+            <p class="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">4 specialized AI agents analyze technicals, fundamentals, sentiment, and risk — delivering high-conviction trading signals directly to MetaTrader 5.</p>
+            <div class="flex flex-wrap justify-center gap-4">
+                <a href="https://frontend-jjh4l1mja-sellomakgatho121-2317s-projects.vercel.app" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-base glow" style="background:linear-gradient(135deg,#00f2ff,#00ff88);color:#000;">Launch Terminal →</a>
+                <a href="#start" class="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-base" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);">Self-Host Guide</a>
+            </div>
+        </div>
+        <div class="absolute inset-0 opacity-[.015]" style="background-image:linear-gradient(rgba(255,255,255,.1)1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1)1px,transparent 1px);background-size:60px 60px;"></div>
+    </section>
+
+    <section class="py-12" style="border-top:1px solid rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.04);background:rgba(0,0,0,.2);">
+        <div class="max-w-4xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div><div class="font-mono text-3xl md:text-4xl font-extrabold grd">4</div><div class="text-xs font-semibold uppercase tracking-widest text-gray-500 mt-2">AI Experts</div></div>
+            <div><div class="font-mono text-3xl md:text-4xl font-extrabold grd">6+</div><div class="text-xs font-semibold uppercase tracking-widest text-gray-500 mt-2">Currency Pairs</div></div>
+            <div><div class="font-mono text-3xl md:text-4xl font-extrabold grd">&lt;2s</div><div class="text-xs font-semibold uppercase tracking-widest text-gray-500 mt-2">Signal Latency</div></div>
+            <div><div class="font-mono text-3xl md:text-4xl font-extrabold grd">24/7</div><div class="text-xs font-semibold uppercase tracking-widest text-gray-500 mt-2">Market Coverage</div></div>
+        </div>
+    </section>
+
+    <section id="features" class="py-24 md:py-32">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <span class="text-xs font-bold uppercase tracking-[.12em] text-emerald-400 mb-4 block">Why Nexus Pro</span>
+                <h2 class="text-3xl md:text-5xl font-extrabold tracking-tight mb-4">Built for Serious Traders</h2>
+                <p class="text-gray-400 max-w-lg mx-auto">Every component is engineered for accuracy, speed, and security.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-5">
+                <div class="ch p-8 rounded-2xl border bs bc">
+                    <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background:rgba(0,242,255,.08);color:#00f2ff;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2"/></svg>
+                    </div>
+                    <h3 class="text-lg font-bold mb-3 tracking-tight">Mixture of Experts AI</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">4 specialized LLM agents debate and synthesize signals using the MM-DREX architecture.</p>
+                </div>
+                <div class="ch p-8 rounded-2xl border bs bc">
+                    <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background:rgba(0,255,136,.08);color:#00ff88;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+                    <h3 class="text-lg font-bold mb-3 tracking-tight">Regime-Adaptive Signals</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">AI dynamically shifts weighting based on live market volatility.</p>
+                </div>
+                <div class="ch p-8 rounded-2xl border bs bc">
+                    <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background:rgba(255,15,66,.08);color:#ff0f42;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+                    <h3 class="text-lg font-bold mb-3 tracking-tight">Risk Shield</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">Drawdown limits, position caps, and kill switches protect your account.</p>
+                </div>
+                <div class="ch p-8 rounded-2xl border bs bc">
+                    <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background:rgba(204,255,0,.08);color:#ccff00;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+                    <h3 class="text-lg font-bold mb-3 tracking-tight">MT5 Direct Execution</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">Signals bridge to MetaTrader 5 via ZeroMQ for sub-second execution.</p>
+                </div>
+                <div class="ch p-8 rounded-2xl border bs bc">
+                    <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background:rgba(0,242,255,.08);color:#00f2ff;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+                    <h3 class="text-lg font-bold mb-3 tracking-tight">Enterprise Security</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">JWT WebSocket auth, session-gated access, encrypted proxying.</p>
+                </div>
+                <div class="ch p-8 rounded-2xl border bs bc">
+                    <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background:rgba(0,255,136,.08);color:#00ff88;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+                    <h3 class="text-lg font-bold mb-3 tracking-tight">Paper Trading Engine</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">Test signals risk-free with equity curves, win rates, drawdown.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="arch" class="py-24 md:py-32" style="background:rgba(0,0,0,.2);border-top:1px solid rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.04);">
+        <div class="max-w-5xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <span class="text-xs font-bold uppercase tracking-[.12em] text-cyan-400 mb-4 block">Under the Hood</span>
+                <h2 class="text-3xl md:text-5xl font-extrabold tracking-tight mb-4">System Architecture</h2>
+                <p class="text-gray-400 max-w-lg mx-auto">Three-layer design with real-time communication at every level.</p>
+            </div>
+            <div class="rounded-2xl p-8 md:p-12 border bs bc">
+                <pre class="text-xs md:text-sm leading-relaxed font-mono text-gray-300 overflow-x-auto">
+┌──────────────────────────────────────────────────────────────┐
+│                   FRONTEND (Next.js 16)                        │
+│  TailwindCSS4 · Framer Motion · Three.js · light-weight-charts │
+│  Socket.IO Client · Zustand · next-auth                       │
+└────────────────────────────┬─────────────────────────────────┘
+                             │ Socket.IO (WebSocket)
+                             ▼
+┌──────────────────────────────────────────────────────────────┐
+│                   BACKEND (Node.js/Express)                    │
+│  Socket.IO Server · SQLite · Auth · CORS · Rate Limiting    │
+│  Port 4000 (Render)                                           │
+└────────────────────────────┬─────────────────────────────────┘
+                             │ ZeroMQ (TCP)
+                             ▼
+┌──────────────────────────────────────────────────────────────┐
+│                   ENGINE (Python 3.11+)                        │
+│  MoE Orchestrator · Technical Analysis · Gemini API          │
+│  Sentiment · Risk · MT5 Integration · Vibe Research          │
+│  Ports 5555/5556                                              │
+└──────────────────────────────────────────────────────────────┘</pre>
+            </div>
+            <div class="mt-12 grid md:grid-cols-3 gap-5">
+                <div class="p-6 rounded-xl border bs bc text-center">
+                    <div class="font-mono text-lg font-bold grd mb-1">ZeroMQ</div>
+                    <div class="text-xs text-gray-500">Python ↔ Node.js</div>
+                    <div class="text-xs text-gray-500">Pub/Sub · Ports 5555/5556</div>
+                </div>
+                <div class="p-6 rounded-xl border bs bc text-center">
+                    <div class="font-mono text-lg font-bold grd mb-1">Socket.IO</div>
+                    <div class="text-xs text-gray-500">Node.js ↔ Frontend</div>
+                    <div class="text-xs text-gray-500">Real-time · Events · Rooms</div>
+                </div>
+                <div class="p-6 rounded-xl border bs bc text-center">
+                    <div class="font-mono text-lg font-bold grd mb-1">SQLite</div>
+                    <div class="text-xs text-gray-500">Persistent Storage</div>
+                    <div class="text-xs text-gray-500">Signals · Trades · Users</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="start" class="py-24 md:py-32">
+        <div class="max-w-3xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <span class="text-xs font-bold uppercase tracking-[.12em] text-lime-400 mb-4 block">Get Started</span>
+                <h2 class="text-3xl md:text-5xl font-extrabold tracking-tight mb-4">Self-Host in Minutes</h2>
+                <p class="text-gray-400 max-w-lg mx-auto">Run the full stack locally or deploy to production.</p>
+            </div>
+            <div class="space-y-6">
+                <div class="p-6 rounded-xl border bs bc">
+                    <h3 class="text-sm font-bold uppercase tracking-wide mb-4 text-gray-300">1. Prerequisites</h3>
+                    <div class="flex flex-wrap gap-3 text-sm">
+                        <span class="px-3 py-1.5 rounded-lg font-mono text-xs" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);">Node.js 18+</span>
+                        <span class="px-3 py-1.5 rounded-lg font-mono text-xs" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);">Python 3.9+</span>
+                        <span class="px-3 py-1.5 rounded-lg font-mono text-xs" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);">Gemini API Key</span>
+                    </div>
+                </div>
+                <div class="p-6 rounded-xl border bs bc">
+                    <h3 class="text-sm font-bold uppercase tracking-wide mb-4 text-gray-300">2. Install Dependencies</h3>
+                    <pre class="text-xs font-mono text-gray-300 bg-black/30 p-4 rounded-lg overflow-x-auto"># Frontend
+cd frontend && npm install
+
+# Backend  
+cd ../backend && npm install
+
+# Python Engine
+cd .. && python -m venv .venv
+source .venv/bin/activate  # Win: .venv\Scripts\activate
+pip install -r engine/requirements.txt</pre>
+                </div>
+                <div class="p-6 rounded-xl border bs bc">
+                    <h3 class="text-sm font-bold uppercase tracking-wide mb-4 text-gray-300">3. Set Environment</h3>
+                    <pre class="text-xs font-mono text-gray-300 bg-black/30 p-4 rounded-lg">export GEMINI_API_KEY="your-key-here"</pre>
+                </div>
+                <div class="p-6 rounded-xl border bs bc">
+                    <h3 class="text-sm font-bold uppercase tracking-wide mb-4 text-gray-300">4. Run</h3>
+                    <pre class="text-xs font-mono text-gray-300 bg-black/30 p-4 rounded-lg overflow-x-auto"># All services (Windows)
+.\start.ps1
+
+# Or individually:
+cd backend && npm start        # Port 4000
+cd frontend && npm run dev     # Port 3000
+python engine/bridge.py        # Engine</pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="docs" class="py-24 md:py-32" style="background:rgba(0,0,0,.2);border-top:1px solid rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.04);">
+        <div class="max-w-5xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <span class="text-xs font-bold uppercase tracking-[.12em] text-purple-400 mb-4 block">Reference</span>
+                <h2 class="text-3xl md:text-5xl font-extrabold tracking-tight mb-4">Documentation</h2>
+                <p class="text-gray-400 max-w-lg mx-auto">Full documentation for developers and contributors.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-5">
+                <a href="PRD.md" target="_blank" rel="noopener" class="ch p-8 rounded-2xl border bs bc block">
+                    <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background:rgba(168,85,247,.08);color:#a855f7;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    </div>
+                    <h3 class="text-lg font-bold mb-3 tracking-tight">Product Requirements</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">PRD with system requirements, roadmap, success metrics, and detailed architecture overview.</p>
+                </a>
+                <a href="Project_Structure.md" target="_blank" rel="noopener" class="ch p-8 rounded-2xl border bs bc block">
+                    <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background:rgba(34,211,238,.08);color:#22d3ee;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                    <h3 class="text-lg font-bold mb-3 tracking-tight">Project Structure</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">Full directory layout, system topology, component catalog, and key module descriptions.</p>
+                </a>
+                <a href="UI_UX_System.md" target="_blank" rel="noopener" class="ch p-8 rounded-2xl border bs bc block">
+                    <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background:rgba(250,204,21,.08);color:#facc15;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    </div>
+                    <h3 class="text-lg font-bold mb-3 tracking-tight">UI/UX Design System</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">Colors, typography, component specs, layout grids, and the "Deep Neo" design philosophy.</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-10 text-center" style="border-top:1px solid rgba(255,255,255,.04);">
+        <p class="text-xs text-gray-600">Built with <span class="text-red-400">❤</span> — FX Analyzer Pro · Powered by Google Gemini AI</p>
+    </footer>
+</body>
+</html>
